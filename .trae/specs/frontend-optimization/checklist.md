@@ -4,3 +4,9 @@
 - [x] WebAudio source and gain nodes explicitly call `disconnect()` upon playback completion.
 - [x] `service-worker.js` no longer attempts to cache the `./developer/` directory.
 - [x] `service-worker.js` correctly falls back to `./index.html` for offline navigation requests.
+- [x] 启动流程按阶段反馈初始化状态，且校准/教学入口不被麦克风准备阻塞。
+- [x] 姿态或麦克风权限失败时，保留明确的重试或降级提示，且不改变既有剧情顺序与玩法。
+- [x] 小地图仅在可见且状态发生变化时重绘，不在隐藏或无变化时持续绘制。
+- [x] 玩家端隐藏小地图或页面进入后台时，画布与相关可视更新会停止无意义执行。
+- [x] 开发者设置轮询不会在页面隐藏、开发者后台或已有请求未完成时继续发起冗余请求。
+- [x] 远程设置服务不可用时，系统优先复用本地缓存，且不会频繁重复请求。

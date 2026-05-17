@@ -1,24 +1,61 @@
-# Frontend Optimization Spec
+# 前端优化 Spec
 
 ## Why
-The frontend application has several areas where performance, memory management, and PWA best practices can be improved. Specifically, frequent DOM updates for debug info, running the game loop and microphone while the app is in the background, lingering WebAudio nodes, and suboptimal Service Worker caching strategies can negatively impact battery life, memory footprint, and offline reliability.
+当前项目已经完成一轮前端性能与后台资源管理优化，但仍存在几类不会改变玩法、却会影响体验与资源占用的问题：启动阶段的权限与资源初始化链路偏重，小地图画布在部分场景下存在不必要重绘，开发者设置轮询也还有进一步收敛空间。
 
 ## What Changes
-- **Performance**: Throttle the `updateDebug` function to reduce unnecessary DOM writes (e.g., limit to 4fps).
-- **Battery/Performance**: Pause the main game loop (`requestAnimationFrame` logic), clear audio loops, and stop microphone processing when the document is hidden (`visibilitychange`).
-- **Memory Management**: Explicitly disconnect WebAudio nodes (`oscillator`, `bufferSource`, `gain`) in their `onended` callbacks to facilitate garbage collection.
-- **PWA/Service Worker**: Remove the invalid directory path (`"./developer/"`) from the `ASSETS` cache list and implement a robust navigation fallback strategy (`request.mode === 'navigate'`) to serve `index.html`.
+- **性能**：保留现有调试面板节流、后台暂停与音频节点释放方案，并继续补强不改变玩法的渲染与轮询优化。
+- **启动体验**：优化 iOS/移动端的音频、姿态与麦克风初始化顺序，减少首次进入时的阻塞感，同时不改变原有教学、剧情与交互节点。
+- **渲染管理**：让小地图/调试画布仅在必要时重绘，在隐藏、不可见或无状态变化时跳过绘制。
+- **网络/后台**：让开发者设置轮询根据页面可见性、当前路由和请求状态自适应收敛，减少无效请求。
+- **PWA/缓存**：延续并保留现有 Service Worker 的静态资源缓存与离线导航回退策略。
 
 ## Impact
-- Affected specs: Frontend Performance, Background Resource Usage, Offline Reliability.
-- Affected code: `game.js`, `service-worker.js`.
+- Affected specs: 前端性能, 启动体验, 后台资源管理, 开发者设置同步, 离线可靠性.
+- Affected code: `game.js`, `service-worker.js`, `index.html`, `styles.css`.
+
+## ADDED Requirements
+### Requirement: 启动链路轻量化
+系统 SHALL 将启动阶段的资源初始化拆分为对用户可感知且可恢复的阶段，优先保证进入校准与教学流程所需的最小能力可用，并将非首屏必需的能力延后到实际剧情节点再准备。
+
+#### Scenario: 首次进入时按阶段完成初始化
+- **WHEN** 用户点击开始进入游戏
+- **THEN** 系统先完成音频与姿态所需的最小初始化，并以明确状态提示进入校准/教学
+- **AND** 麦克风相关准备不应阻塞首轮启动流程
+
+#### Scenario: 权限部分失败时仍可继续既有流程
+- **WHEN** 某个非首屏必需能力暂时不可用或请求失败
+- **THEN** 系统提供可理解的重试或降级提示
+- **AND** 不改变既有剧情顺序、关卡目标与玩法规则
+
+### Requirement: 条件化小地图渲染
+系统 SHALL 仅在小地图可见且画面状态发生变化时重绘画布；当界面隐藏、开发者设置关闭小地图、或场景状态未变化时，应避免重复绘制。
+
+#### Scenario: 小地图隐藏时停止无效重绘
+- **WHEN** 玩家端小地图被关闭，或当前不处于需要显示地图的界面
+- **THEN** 系统不再执行无意义的地图渲染
+
+#### Scenario: 状态未变化时跳过重绘
+- **WHEN** 玩家位置、朝向、场景、目标和调试可见性均未变化
+- **THEN** 系统跳过该帧的小地图重绘
+
+### Requirement: 自适应设置轮询
+系统 SHALL 让开发者设置同步在玩家端采用可见性、路由与请求状态感知的轮询策略，避免隐藏页面、非玩家页面或已有请求进行中时继续发起冗余请求。
+
+#### Scenario: 页面隐藏或无关路由时收敛轮询
+- **WHEN** 页面进入后台，或当前处于开发者后台等无需玩家端轮询的上下文
+- **THEN** 系统暂停或跳过该周期的远程设置拉取
+
+#### Scenario: 请求未完成时避免重叠拉取
+- **WHEN** 上一次设置请求尚未完成
+- **THEN** 系统不再发起新的重复请求
 
 ## MODIFIED Requirements
-### Requirement: Background Resource Management
-When the application is put into the background (document becomes hidden), it SHALL suspend all resource-intensive operations including the game loop, microphone processing, and recurring audio loops, resuming them appropriately when brought back to the foreground.
+### Requirement: 后台资源管理
+当应用进入后台（`document.hidden` 为 true）时，系统 SHALL 暂停高资源占用逻辑，包括游戏主循环、麦克风处理、循环音频，以及不必要的轮询和可视渲染；当应用回到前台时，再按当前状态有条件恢复。
 
-### Requirement: Service Worker Caching
-The Service Worker SHALL strictly cache specific file assets (not directories) and SHALL intercept all navigation requests to provide `index.html` as a fallback when offline.
+### Requirement: Service Worker 缓存
+Service Worker SHALL 严格缓存具体静态资源（而非目录），并在离线导航请求时优先返回 `index.html` 作为回退页面，同时避免将开发者后台相关内容误纳入离线缓存策略。
 
 ### Requirement: DOM Performance
-The debug UI panel SHALL NOT update on every frame, but rather throttle its updates to a reasonable frequency to save CPU cycles.
+调试信息面板 SHALL 不在每一帧更新，而是以合理频率节流；与调试面板关联的可视更新也应避免在无状态变化时重复执行。

@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0d1018" />
+    <meta name="theme-color" content="#0c0b0f" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>回声里的家</title>
+    <title>声隅</title>
     <link rel="manifest" href="./manifest.json" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
@@ -14,11 +14,11 @@
   <body>
     <main class="app-shell">
       <section id="startScreen" class="screen screen-start is-active">
-        <div class="start-mark" aria-hidden="true"></div>
+        <div class="start-mark" aria-hidden="true"><span class="start-mark-dot"></span></div>
         <div class="start-copy">
           <p class="eyebrow">Spatial Audio Story</p>
-          <h1>回声里的家</h1>
-          <p>竖屏戴上耳机，用声音在家里摸索前进。</p>
+          <h1>声隅</h1>
+          <p>戴上耳机，竖屏握持，用声音在家里摸索前进。</p>
         </div>
         <button id="startButton" class="primary-button" type="button">开始</button>
         <p id="startStatus" class="status-note">点击后启用音频和手机姿态。</p>
@@ -48,10 +48,6 @@
           <span></span>
         </div>
 
-        <section id="minimapPanel" class="minimap-panel" aria-label="调试小地图">
-          <canvas id="mapCanvas" aria-label="竖屏关卡小地图"></canvas>
-        </section>
-
         <button id="debugHotspot" class="debug-hotspot" type="button" aria-label="切换调试信息"></button>
         <aside id="debugPanel" class="debug-panel" aria-live="polite">
           <span id="debugScene">场景 --</span>
@@ -59,7 +55,6 @@
           <span id="debugDistance">距离 --</span>
           <span id="debugSensor">姿态 --</span>
           <span id="debugMic">麦克风 --</span>
-          <span id="debugMap">地图 --</span>
         </aside>
 
         <div class="turn-layer" aria-hidden="true">
@@ -78,7 +73,7 @@
         <div class="ending-copy">
           <p class="eyebrow">Echo</p>
           <h2>你听见了</h2>
-          <p>那些被放在磁带里的爱，从来没有离开。</p>
+          <p>那些留在磁带里的声音，从来没有离开。</p>
         </div>
         <button id="playAgainButton" class="primary-button" type="button">再玩一次</button>
       </section>
@@ -87,7 +82,7 @@
         <div class="developer-card">
           <p class="eyebrow">Developer</p>
           <h1>后台控制</h1>
-          <p>输入开发者密码后，可以全局控制玩家端是否显示小地图。</p>
+          <p>输入开发者密码后，可以全局控制空间音频模式。</p>
 
           <form id="developerLogin" class="developer-login">
             <label for="developerPassword">开发者密码</label>
@@ -96,19 +91,29 @@
           </form>
 
           <section id="developerControls" class="developer-controls" aria-live="polite">
-            <label class="toggle-row">
+            <div class="setting-row">
               <span>
-                <strong>玩家可见小地图</strong>
-                <small>关闭后玩家端只保留沉浸暗场和字幕。</small>
+                <strong>空间音频模式</strong>
+                <small>明显适合现场演示，真实更接近自然 HRTF。</small>
               </span>
-              <input id="minimapToggle" type="checkbox" />
-            </label>
+              <div class="segment-control" role="radiogroup" aria-label="空间音频模式">
+                <label>
+                  <input type="radio" name="spatialMode" value="boosted" />
+                  <span>明显</span>
+                </label>
+                <label>
+                  <input type="radio" name="spatialMode" value="natural" />
+                  <span>真实</span>
+                </label>
+              </div>
+            </div>
             <button id="refreshSettingsButton" class="secondary-button" type="button">刷新状态</button>
           </section>
 
           <p id="developerStatus" class="status-note">等待登录。</p>
         </div>
       </section>
+
     </main>
 
     <noscript>这个 demo 需要启用 JavaScript。</noscript>

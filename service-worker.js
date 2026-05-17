@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "echo-home-demo-v4";
+const CACHE_NAME = "shengyu-v13";
 const ASSETS = [
   "./",
   "./index.html",
@@ -42,8 +42,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  const isAudio = url.pathname.startsWith("/assets/audio/");
+
   event.respondWith(
-    fetch(event.request)
+    (isAudio ? caches.match(event.request).then((cached) => cached || fetch(event.request)) : fetch(event.request))
       .then((networkResponse) => {
         const responseClone = networkResponse.clone();
         if (!url.pathname.startsWith("/developer/")) {

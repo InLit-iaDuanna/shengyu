@@ -10,6 +10,7 @@ PORT = int(os.environ.get("GAME_SETTINGS_PORT", "8787"))
 PASSWORD = os.environ.get("GAME_SETTINGS_PASSWORD", "seeinglab")
 STATE_PATH = os.environ.get("GAME_SETTINGS_STATE", "/var/lib/game-settings/state.json")
 STATE_LOCK = threading.Lock()
+SPATIAL_MODES = {"boosted", "natural"}
 
 
 def now_iso():
@@ -17,7 +18,11 @@ def now_iso():
 
 
 def default_state():
-    return {"showMinimap": True, "updatedAt": now_iso(), "version": 1}
+    return {"spatialMode": "boosted", "updatedAt": now_iso(), "version": 1}
+
+
+def normalize_spatial_mode(value):
+    return value if value in SPATIAL_MODES else "boosted"
 
 
 def ensure_state_dir():
@@ -28,7 +33,7 @@ def ensure_state_dir():
 
 def normalize_state(data):
     return {
-        "showMinimap": bool(data.get("showMinimap", True)),
+        "spatialMode": normalize_spatial_mode(data.get("spatialMode", "boosted")),
         "updatedAt": data.get("updatedAt") or now_iso(),
         "version": int(data.get("version", 1)),
     }
@@ -98,7 +103,7 @@ class Handler(BaseHTTPRequestHandler):
         with STATE_LOCK:
             previous = read_state_unlocked()
             next_state = {
-                "showMinimap": bool(body.get("showMinimap", True)),
+                "spatialMode": normalize_spatial_mode(body.get("spatialMode", "boosted")),
                 "updatedAt": now_iso(),
                 "version": previous["version"] + 1,
             }

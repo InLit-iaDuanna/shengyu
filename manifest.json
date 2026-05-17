@@ -1,13 +1,13 @@
 {
-  "name": "回声里的家",
-  "short_name": "回声",
-  "description": "一个竖屏空间音频剧情解谜 PWA demo。",
+  "name": "声隅",
+  "short_name": "声隅",
+  "description": "竖屏空间音频剧情解谜 — 用声音在家里摸索前进。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0d1018",
-  "theme_color": "#0d1018",
+  "background_color": "#0c0b0f",
+  "theme_color": "#0c0b0f",
   "icons": [
     {
       "src": "./icon.svg",
