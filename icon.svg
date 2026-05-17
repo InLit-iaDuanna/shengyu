@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="空间音频解谜图标">
+  <rect width="512" height="512" rx="96" fill="#10131f"/>
+  <circle cx="256" cy="256" r="154" fill="none" stroke="#2fd8ff" stroke-width="28"/>
+  <circle cx="256" cy="256" r="86" fill="none" stroke="#5df0ad" stroke-width="24"/>
+  <circle cx="256" cy="256" r="28" fill="#ff4d76"/>
+  <path d="M256 72v68M256 372v68M72 256h68M372 256h68" stroke="#ffd166" stroke-width="24" stroke-linecap="round"/>
+</svg>

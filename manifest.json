@@ -1,0 +1,19 @@
+{
+  "name": "回声里的家",
+  "short_name": "回声",
+  "description": "一个竖屏空间音频剧情解谜 PWA demo。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1018",
+  "theme_color": "#0d1018",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

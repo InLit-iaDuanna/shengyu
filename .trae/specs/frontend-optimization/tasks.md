@@ -1,0 +1,13 @@
+# Tasks
+- [ ] Task 1: Throttle DOM updates for Debug UI
+  - [ ] SubTask 1.1: Create a throttled version of `updateDebug` in `game.js` (e.g., `updateDebugThrottled` running at ~250ms intervals).
+  - [ ] SubTask 1.2: Replace calls to `updateDebug()` inside the high-frequency `updateGame` loop with the throttled version.
+- [ ] Task 2: Improve Background Resource Management
+  - [ ] SubTask 2.1: Introduce a `rafRunning` flag in `game.js` to control the `gameLoop` execution.
+  - [ ] SubTask 2.2: Update `handleVisibilityChange` in `game.js` to toggle `rafRunning`, and call `stopAllLoops()` and `stopMic()` when the document is hidden.
+- [ ] Task 3: Optimize WebAudio Memory Management
+  - [ ] SubTask 3.1: Add `onended` event handlers to the source nodes in `game.js` where audio is played.
+  - [ ] SubTask 3.2: Within the `onended` handlers, explicitly call `disconnect()` on the source and associated gain nodes.
+- [ ] Task 4: Fix Service Worker Caching and Offline Fallback
+  - [ ] SubTask 4.1: Remove `"./developer/"` from the `ASSETS` array in `service-worker.js`.
+  - [ ] SubTask 4.2: Add a check for `event.request.mode === "navigate"` in the `fetch` event listener to reliably return the cached `./index.html`.

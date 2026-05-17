@@ -1,0 +1,19 @@
+[Unit]
+Description=Game settings API for game.chugao.art
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+Environment=GAME_SETTINGS_PORT=8787
+Environment=GAME_SETTINGS_PASSWORD=seeinglab
+Environment=GAME_SETTINGS_STATE=/var/lib/game-settings/state.json
+ExecStart=/usr/bin/python3 /opt/game-settings-api/game-settings-api.py
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

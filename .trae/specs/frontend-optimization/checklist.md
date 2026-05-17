@@ -1,0 +1,6 @@
+- [x] `updateDebug` is throttled and does not execute on every frame.
+- [x] The game loop (`gameLoop`) skips processing when `document.hidden` is true.
+- [x] Microphone and audio loops are stopped when the application is sent to the background.
+- [x] WebAudio source and gain nodes explicitly call `disconnect()` upon playback completion.
+- [x] `service-worker.js` no longer attempts to cache the `./developer/` directory.
+- [x] `service-worker.js` correctly falls back to `./index.html` for offline navigation requests.
