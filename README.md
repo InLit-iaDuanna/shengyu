@@ -68,7 +68,7 @@ Service Worker 会跳过 `/api/`，不会缓存后台设置。
 
 ## 音频架构
 
-所有声音统一走 `GAME_CONFIG.audioCues`。当前已有 43 个 MP3 已整理到 `assets/audio/`，按需在线播放，不进入 Service Worker 预缓存。缺失素材继续使用合成音或静默兜底，后续补齐后只需要给 cue 填 `src`。当前不再以 8MB 作为素材限制，只记录实际体积。
+所有声音统一走 `GAME_CONFIG.audioCues`。当前已有 48 个 MP3 已整理到 `assets/audio/`，按需在线播放，不进入 Service Worker 预缓存。缺失素材继续使用合成音或静默兜底，后续补齐后只需要给 cue 填 `src`。当前不再以 8MB 作为素材限制，只记录实际体积。
 
 ```js
 waterBoil: {
@@ -93,18 +93,18 @@ AudioBufferSource / Synthetic Source -> Gain -> PannerNode -> MasterGain -> Dest
 
 ## 碰撞反馈
 
-- Android Chrome：碰撞时优先调用 `navigator.vibrate([0, 85])`，并播放对应家具材质撞击声。
-- iPhone Safari：Web 震动通常不可用，因此用低频撞击声、屏幕短抖和“前面好像过不去。”提示兜底。
+- Android Chrome：碰撞时优先调用 `navigator.vibrate([0, 85])`，并播放对应家具材质撞击声；撞到房间边界会轮换播放两条墙面撞击声。
+- iPhone Safari：Web 震动通常不可用，因此用墙面/家具撞击声、主角“诶，撞到墙了”人声、屏幕短抖和“诶，前面好像过不去。”提示兜底。
 - iOS 原生壳：碰撞时会尝试 `Capacitor.Plugins.Haptics.impact({ style: "medium" })`，也支持 `window.webkit.messageHandlers.haptic.postMessage({ type: "impact", style: "medium" })` 桥接。
-- 家具碰撞音按材质映射：衣橱、床/沙发、电视柜、餐桌、书柜分别使用不同 MP3。
+- 家具碰撞音按材质映射：衣橱、床/沙发、电视柜、餐桌、书柜分别使用不同 MP3；主角撞墙人声带冷却，避免连续移动时重复刷声音。
 
 ## 辅助规则
 
 - 导航时如果连续偏离目标方向约 3 秒，会提示“声音好像在另一个方向。”
 - 原地停留约 5 秒，会重播更清晰的目标声。
-- 雨声作为室外背景层低音量、低通滤波后淡入；饮水机作为目标声更响，确保雨声不盖过听声辨位。
+- 雨声作为非常轻的室外背景层，低通滤波后淡入；饮水机作为目标声更响，确保雨声不盖过听声辨位。
 - 麦克风回应使用更低 RMS 阈值和 peak 检测，短促说“唉/诶”也能通过；失败两次后允许轻触屏幕备用回应。
-- 剧情段开始后会锁住轻触跳过：有语音/关键音效时等声音结束，长环境声最多锁 5 秒，避免玩家只扫文字直接跳过声音。
+- 剧情推进只把主人公旁白、奶奶录音和麦克风回放当作主轨：人声听完后自动进入下一句；雨声、风声、心跳、磁带机等背景音不会锁住点击。
 
 ## 内容
 

@@ -25,10 +25,31 @@
       </section>
 
       <section id="setupScreen" class="screen screen-setup">
-        <div class="setup-card">
+        <div id="setupCard" class="setup-card" data-step="calibrate">
           <p class="eyebrow">Calibration</p>
           <h2 id="setupTitle">先校准手机</h2>
           <p id="setupText">竖屏自然握持手机，保持现在的姿势不动。</p>
+          <div id="setupGuide" class="control-primer" aria-label="新手教学提示">
+            <div class="primer-visual" aria-hidden="true">
+              <span class="primer-direction primer-forward">向前倾</span>
+              <span class="primer-phone"><span></span></span>
+              <span class="primer-direction primer-backward">向后仰</span>
+            </div>
+            <div class="primer-steps">
+              <p class="primer-step" data-primer="calibrate">
+                <strong>先定水平</strong>
+                <span>把现在自然握住的角度记成“不动”。</span>
+              </p>
+              <p class="primer-step" data-primer="forward">
+                <strong>向前</strong>
+                <span>从校准姿势轻轻向前倾，角色前进。</span>
+              </p>
+              <p class="primer-step" data-primer="backward">
+                <strong>后退</strong>
+                <span>从校准姿势轻轻向后仰，角色后退。</span>
+              </p>
+            </div>
+          </div>
           <p id="setupHint" class="status-note">校准后会进入 6 步新手教学。</p>
           <div class="setup-actions">
             <button id="calibrateButton" class="primary-button" type="button">校准</button>
@@ -43,6 +64,11 @@
 
       <section id="gameScreen" class="screen screen-game" aria-label="剧情游戏画面">
         <div class="sound-field" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div id="arrivalRipple" class="arrival-ripple" aria-hidden="true">
           <span></span>
           <span></span>
           <span></span>

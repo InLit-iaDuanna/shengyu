@@ -20,6 +20,7 @@ const fileCue = (src, fallback, options = {}) => ({
 
 const voiceCue = (src, options = {}) => fileCue(src, "silent", {
   spatial: false,
+  role: "voice",
   volume: 0.82,
   ...options,
 });
@@ -70,7 +71,10 @@ const GAME_CONFIG = {
   mic: {
     threshold: 0.012,
     peakThreshold: 0.055,
-    holdMs: 60,
+    holdMs: 40,
+    silenceMs: 180,
+    maxResponseMs: 1600,
+    recordingFinalizeWaitMs: 600,
     timeoutMs: 8000,
     maxFailures: 2,
   },
@@ -78,7 +82,7 @@ const GAME_CONFIG = {
     heartbeat: fileCue("heartbeat.mp3", "heartbeat", { volume: 0.5 }),
     heartbeatStrong: fileCue("heartbeat-strong.mp3", "heartbeat", { volume: 0.62 }),
     dizzy: fileCue("dizzy.mp3", "heartbeat", { volume: 0.55 }),
-    rain: fileCue("rain-ambient.mp3", "rain", { spatial: false, volume: 0.055, filter: { type: "lowpass", frequency: 900, q: 0.55 } }),
+    rain: fileCue("rain-ambient.mp3", "rain", { spatial: false, volume: 0.025, filter: { type: "lowpass", frequency: 700, q: 0.5 } }),
     bedRise: fileCue("bed-rise.mp3", "pickup", { volume: 0.55 }),
     waterBoil: fileCue("water-dispenser.mp3", "waterBoil", { loop: true, volume: 0.9 }),
     pour: fileCue("water-dispenser.mp3", "pour", { volume: 0.7 }),
@@ -120,11 +124,12 @@ const GAME_CONFIG = {
     voiceGoFind: voiceCue("voice-go-find.mp3", { volume: 0.84 }),
     voiceFoundPlayer: voiceCue("voice-found-player.mp3", { volume: 0.86 }),
     voiceBackBedroom: voiceCue("voice-back-bedroom.mp3", { volume: 0.86 }),
-    grandmaTapeRain: fileCue("grandma-tape-rain.mp3", "grandma", { spatial: false, volume: 0.84 }),
-    grandmaTapeCare: fileCue("grandma-tape-care.mp3", "grandma", { spatial: false, volume: 0.84 }),
-    rooster: fileCue("rooster.mp3", "rooster", { volume: 0.72 }),
+    grandmaTapeRain: fileCue("grandma-tape-rain.mp3", "grandma", { spatial: false, role: "voice", volume: 0.84 }),
+    grandmaTapeCare: fileCue("grandma-tape-care.mp3", "grandma", { spatial: false, role: "voice", volume: 0.84 }),
+    rooster: fileCue("rooster.mp3", "rooster", { spatial: false, volume: 1.25 }),
     grandmaBeacon: { kind: "synthetic", src: "", spatial: true, loop: true, volume: 0.58, fallback: "grandmaBeacon" },
-    grandmaWakeUp: fileCue("grandma-wake-up.mp3", "grandma", { loop: false, volume: 0.72 }),
+    grandmaWakeUp: fileCue("grandma-wake-up.mp3", "grandma", { loop: false, role: "voice", volume: 0.72 }),
+    arrival: { kind: "synthetic", src: "", spatial: false, loop: false, volume: 0.52, fallback: "arrival" },
     success: { kind: "synthetic", src: "", spatial: false, loop: false, volume: 0, fallback: "silent" },
   },
 };
@@ -199,7 +204,7 @@ const STORY_STEPS = [
   { mode: "story", speaker: "噩梦", text: "眼前突然模糊发黑。医生的声音、争吵的声音，一起压了过来。", cue: "dizzy", instruction: "轻触继续" },
   { mode: "story", speaker: "医生", text: "这是视网膜动脉阻塞。手术比较成功，回家先好好休养。", cue: "heartbeatStrong", instruction: "轻触继续" },
   { mode: "story", speaker: "内心", text: "怎么又是噩梦！", cue: "heartbeat", voice: "voiceNightmareAgain", instruction: "轻触继续" },
-  { mode: "story", speaker: "窗外", text: "下雨了。", cue: "rain", cueOptions: { fadeInMs: 3000 }, voice: "voiceRain", waitForAudio: false, autoDelayMs: 5000, manualAdvanceDelayMs: 5000, instruction: "正在听雨" },
+  { mode: "story", speaker: "窗外", text: "下雨了。", cue: "rain", cueOptions: { fadeInMs: 3000 }, voice: "voiceRain", instruction: "正在播放" },
   { mode: "story", speaker: "内心", text: "水喝完了，去接点。", cue: "waterBoil", voice: "voiceNeedWater", instruction: "轻触屏幕下床" },
   { mode: "tapAction", speaker: "动作", text: "你摸索着从床上坐起来。", instruction: "轻触屏幕下床", cue: "bedRise" },
   { mode: "navigate", scene: "bedroom", target: "water", speaker: "操作", text: "我好像听到了饮水机的声音。", voice: "voiceHeardWater", instruction: "根据声源方向移动到饮水机" },
@@ -234,10 +239,10 @@ const STORY_STEPS = [
 ];
 
 const TUTORIAL_STEPS = [
-  { id: "forward", title: "向前移动", text: "轻轻向前倾斜手机，超过阈值后角色会以固定速度前进。", hint: "向前倾斜并保持一下" },
-  { id: "backward", title: "向后移动", text: "再试试向后倾斜。移动速度不会因为倾斜更大而变快。", hint: "向后倾斜并保持一下" },
-  { id: "left", title: "向左移动", text: "向左倾斜可以横向移动，用来绕开家具。", hint: "向左倾斜并保持一下" },
-  { id: "right", title: "向右移动", text: "向右倾斜可以横向移动。", hint: "向右倾斜并保持一下" },
+  { id: "forward", title: "练习向前", text: "从刚才校准的姿势开始，把手机轻轻向前倾一点，角色就会前进。", hint: "向前轻倾，看到提示变成“很好”再松" },
+  { id: "backward", title: "练习后退", text: "回到校准姿势，再把手机轻轻向后仰一点，角色就会后退。", hint: "向后轻仰，看到提示变成“很好”再松" },
+  { id: "left", title: "向左移动", text: "手机向左倾可以横向移动，用来绕开家具。", hint: "向左倾斜并保持一下" },
+  { id: "right", title: "向右移动", text: "手机向右倾可以横向移动。如果方向不对，可以点下面的反向按钮。", hint: "向右倾斜并保持一下" },
   { id: "turnLeft", title: "左转头", text: "按住屏幕左半边，角色会持续向左转头。", hint: "按住屏幕左半边" },
   { id: "turnRight", title: "右转头", text: "按住屏幕右半边，角色会持续向右转头。戴耳机时，转头会改变声源方向。", hint: "按住屏幕右半边" },
 ];
@@ -257,6 +262,7 @@ const ui = {
   setupTitle: document.querySelector("#setupTitle"),
   setupText: document.querySelector("#setupText"),
   setupHint: document.querySelector("#setupHint"),
+  setupCard: document.querySelector("#setupCard"),
   calibrateButton: document.querySelector("#calibrateButton"),
   skipTutorialButton: document.querySelector("#skipTutorialButton"),
   invertForwardButton: document.querySelector("#invertForwardButton"),
@@ -266,6 +272,7 @@ const ui = {
   instructionText: document.querySelector("#instructionText"),
   storyPanel: document.querySelector("#storyPanel"),
   debugHotspot: document.querySelector("#debugHotspot"),
+  arrivalRipple: document.querySelector("#arrivalRipple"),
   debugPanel: document.querySelector("#debugPanel"),
   debugScene: document.querySelector("#debugScene"),
   debugStep: document.querySelector("#debugStep"),
@@ -338,6 +345,7 @@ const state = {
     recordedBlob: null,
     recordedUrl: "",
     loudSince: 0,
+    lastVoiceAt: 0,
     voiceMs: 0,
     lastSampleAt: 0,
     level: 0,
@@ -359,6 +367,7 @@ const state = {
   },
   debugVisible: false,
   debugPressTimer: 0,
+  arrivalRippleTimer: 0,
   settingsPollId: 0,
   settingsRequestInFlight: false,
   settingsRequestPromise: null,
@@ -461,10 +470,11 @@ function restartGame() {
 function showSetupCalibration() {
   state.gameStatus = "setup";
   state.setup.tutorialActive = false;
-  ui.setupTitle.textContent = "先校准手机";
+  setSetupGuideStep("calibrate");
+  ui.setupTitle.textContent = "先做水平校准";
   ui.setupText.textContent =
     state.orientation.permission === "granted"
-      ? "竖屏自然握持手机，保持现在的姿势不动。"
+      ? "校准会把你现在自然握住手机的角度记成“不动”。之后从这个姿势轻轻前倾就是前进，轻轻后仰就是后退。"
       : "当前没有读到手机姿态，可以刷新后重新允许，或在桌面用键盘调试。";
   ui.setupHint.textContent = getOrientationSetupHint();
   ui.calibrateButton.textContent = "校准";
@@ -476,7 +486,7 @@ function getOrientationSetupHint() {
     return "这个浏览器没有姿态传感器，可以用 WASD/QE 调试；麦克风会在剧情需要时再请求。";
   }
   if (state.orientation.permission === "granted") {
-    return "点击校准后，会进入 6 步新手教学；麦克风会在剧情需要时再请求。";
+    return "竖屏握稳，屏幕朝自己，点校准后先练前进、后退、左右移动和转头。";
   }
   if (state.orientation.permission === "denied") {
     return "iOS 需要 HTTPS，并在系统弹窗中允许“运动与方向访问”；不影响先用键盘完成流程。";
@@ -510,11 +520,19 @@ function showTutorialStep() {
     return;
   }
 
+  setSetupGuideStep(step.id);
   ui.setupTitle.textContent = step.title;
   ui.setupText.textContent = step.text;
   ui.setupHint.textContent = step.hint;
   ui.calibrateButton.textContent = "重新校准";
   updateInvertButtons();
+}
+
+function setSetupGuideStep(stepId) {
+  if (!ui.setupCard) {
+    return;
+  }
+  ui.setupCard.dataset.step = stepId || "calibrate";
 }
 
 function startStoryRun() {
@@ -735,15 +753,15 @@ function enterStep(index) {
   stopAllLoops();
 
   if (step.cue) {
-    playbacks.push(playCue(step.cue, getStepTarget(step), step.cueOptions || {}));
+    playbacks.push(makeStepPlayback(step.cue, playCue(step.cue, getStepTarget(step), step.cueOptions || {})));
   }
 
   if (step.voice) {
-    playbacks.push(playCue(step.voice, null, { volumeBoost: 1 }));
+    playbacks.push(makeStepPlayback(step.voice, playCue(step.voice, null, { volumeBoost: 1 })));
   }
 
   if (step.replayRecording) {
-    playbacks.push(playMicRecording(step));
+    playbacks.push(makeStepPlayback("micRecording", playMicRecording(step), true));
   }
 
   if (step.mode === "navigate") {
@@ -818,6 +836,9 @@ function advanceStep() {
 
 function getStepInstruction(step) {
   if (shouldAutoAdvanceStep(step)) {
+    if (stepHasBlockingAudio(step)) {
+      return step.autoInstruction || "正在播放";
+    }
     return step.instruction || "正在播放";
   }
   return step.instruction || "轻触继续";
@@ -830,7 +851,7 @@ function shouldAutoAdvanceStep(step) {
   if (typeof step.autoAdvance === "boolean") {
     return step.autoAdvance;
   }
-  return step.mode === "story";
+  return step.mode === "story" && stepHasBlockingAudio(step);
 }
 
 function clearAutoAdvance(invalidate = false) {
@@ -850,9 +871,7 @@ function scheduleAutoAdvance(step, token, playbacks) {
   }
 
   const delayMs = Number.isFinite(step.autoDelayMs) ? step.autoDelayMs : 500;
-  const waits = step.waitForAudio === false
-    ? []
-    : playbacks.map(waitForPlayback).filter(Boolean);
+  const waits = getStepBlockingPlaybacks(step, playbacks).map(waitForPlayback).filter(Boolean);
 
   const armTimer = () => {
     if (token !== state.stepToken || currentStep() !== step) {
@@ -880,9 +899,12 @@ function scheduleManualAdvanceUnlock(step, token, playbacks) {
   }
 
   state.manualAdvanceReady = false;
-  const waits = step.waitForAudio === false
-    ? []
-    : playbacks.map(waitForPlayback).filter(Boolean);
+  const waits = getStepBlockingPlaybacks(step, playbacks).map(waitForPlayback).filter(Boolean);
+  if (!waits.length) {
+    state.manualAdvanceReady = true;
+    return;
+  }
+
   const delayMs = Number.isFinite(step.manualAdvanceDelayMs)
     ? step.manualAdvanceDelayMs
     : 5000;
@@ -905,7 +927,7 @@ function scheduleManualAdvanceUnlock(step, token, playbacks) {
 }
 
 function shouldLockManualAdvance(step) {
-  return Boolean(step && (step.mode === "story" || step.autoAdvance || step.waitForAudio));
+  return Boolean(step && (stepHasBlockingAudio(step) || step.autoAdvance || step.waitForAudio === true));
 }
 
 function canManuallyAdvanceStep(step) {
@@ -913,7 +935,7 @@ function canManuallyAdvanceStep(step) {
 }
 
 function waitForPlayback(playback) {
-  return Promise.resolve(playback).then((resolved) => {
+  return Promise.resolve(playback?.playback || playback).then((resolved) => {
     if (!resolved) {
       return;
     }
@@ -928,9 +950,50 @@ function waitForPlayback(playback) {
   });
 }
 
+function makeStepPlayback(cueName, playback, blocksAdvance = false) {
+  return {
+    cueName,
+    playback,
+    blocksAdvance: blocksAdvance || isBlockingCue(cueName),
+  };
+}
+
+function getStepBlockingPlaybacks(step, playbacks) {
+  if (step.waitForAudio === false) {
+    return [];
+  }
+  if (Array.isArray(step.waitForCues)) {
+    return playbacks.filter((playback) => step.waitForCues.includes(playback.cueName));
+  }
+  const blocking = playbacks.filter((playback) => playback.blocksAdvance);
+  if (blocking.length || step.waitForAudio === "voice") {
+    return blocking;
+  }
+  return step.waitForAudio === true ? playbacks : blocking;
+}
+
+function stepHasBlockingAudio(step) {
+  return Boolean(step && (
+    isBlockingCue(step.cue)
+    || isBlockingCue(step.voice)
+    || step.replayRecording
+  ));
+}
+
+function isBlockingCue(cueName) {
+  if (!cueName) {
+    return false;
+  }
+  if (cueName === "micRecording") {
+    return true;
+  }
+  return GAME_CONFIG.audioCues[cueName]?.role === "voice";
+}
+
 function queueMicPromptStart(step, token, playbacks) {
   state.mic.status = "waiting";
   state.mic.loudSince = 0;
+  state.mic.lastVoiceAt = 0;
   state.mic.voiceMs = 0;
   state.mic.lastSampleAt = 0;
   state.mic.level = 0;
@@ -939,7 +1002,7 @@ function queueMicPromptStart(step, token, playbacks) {
 
   const waits = step.listenAfterAudio === false
     ? []
-    : playbacks.map(waitForPlayback).filter(Boolean);
+    : getStepBlockingPlaybacks(step, playbacks).map(waitForPlayback).filter(Boolean);
   const beginListening = () => {
     if (token !== state.stepToken || currentStep() !== step || state.gameStatus !== "micPrompt") {
       return;
@@ -1022,11 +1085,31 @@ function updateGame(dt, now) {
   }
 
   if (step.mode === "navigate" && target && getDistanceToTarget() <= GAME_CONFIG.control.triggerRadius) {
-    playCue("success", target);
+    triggerArrivalFeedback(target);
     enterStep(state.stepIndex + 1);
   }
 
   updateDebugThrottled();
+}
+
+function triggerArrivalFeedback(target) {
+  playCue("arrival", target);
+  showArrivalRipple();
+}
+
+function showArrivalRipple() {
+  if (!ui.arrivalRipple) {
+    return;
+  }
+
+  window.clearTimeout(state.arrivalRippleTimer);
+  ui.arrivalRipple.classList.remove("is-active");
+  void ui.arrivalRipple.offsetWidth;
+  ui.arrivalRipple.classList.add("is-active");
+  state.arrivalRippleTimer = window.setTimeout(() => {
+    ui.arrivalRipple.classList.remove("is-active");
+    state.arrivalRippleTimer = 0;
+  }, 1900);
 }
 
 function updateMovement(dt, now) {
@@ -1655,6 +1738,10 @@ function playSyntheticCue(kind, cueName, target = null, options = {}) {
     playTone(output, now, "sine", 520, 0.22, 0.16, 660);
     playTone(output, now + 0.16, "triangle", 780, 0.28, 0.12, 620);
     playNoise(output, now + 0.03, 0.12, 0.08, 1800);
+  } else if (kind === "arrival") {
+    playTone(output, now, "sine", 620, 0.34, 0.16, 760);
+    playTone(output, now + 0.08, "triangle", 930, 0.42, 0.1, 1180);
+    playNoise(output, now + 0.04, 0.24, 0.025, 1400);
   } else {
     playTone(output, now, "triangle", 880, 0.26, 0.3, 1320);
     playTone(output, now + 0.08, "sine", 1320, 0.22, 0.16, 1760);
@@ -1686,6 +1773,7 @@ function getSyntheticCueDuration(kind) {
     rooster: 0.46,
     grandma: 0.56,
     grandmaBeacon: 0.5,
+    arrival: 0.55,
   };
   return durations[kind] || 0.36;
 }
@@ -1849,6 +1937,7 @@ async function startMicPrompt() {
     state.mic.data = new Uint8Array(analyser.fftSize);
     state.mic.status = "listening";
     state.mic.loudSince = 0;
+    state.mic.lastVoiceAt = 0;
     state.mic.voiceMs = 0;
     state.mic.lastSampleAt = performance.now();
     state.mic.level = 0;
@@ -1895,23 +1984,36 @@ function updateMic(now) {
     if (!state.mic.loudSince) {
       state.mic.loudSince = now;
     }
+    state.mic.lastVoiceAt = now;
     state.mic.voiceMs += elapsed;
-    if (state.mic.voiceMs >= GAME_CONFIG.mic.holdMs) {
+    if (
+      state.mic.voiceMs >= GAME_CONFIG.mic.holdMs
+      && now - state.mic.loudSince >= GAME_CONFIG.mic.maxResponseMs
+    ) {
       completeMicPrompt();
     }
+  } else if (
+    state.mic.voiceMs >= GAME_CONFIG.mic.holdMs
+    && state.mic.lastVoiceAt
+    && now - state.mic.lastVoiceAt >= GAME_CONFIG.mic.silenceMs
+  ) {
+    completeMicPrompt();
   } else {
     state.mic.voiceMs = Math.max(0, state.mic.voiceMs - elapsed * 1.4);
     if (!state.mic.voiceMs) {
       state.mic.loudSince = 0;
+      state.mic.lastVoiceAt = 0;
     }
   }
 }
 
-async function completeMicPrompt() {
+function completeMicPrompt() {
   if (state.mic.completionPending) {
     return;
   }
 
+  const stepToken = state.stepToken;
+  const nextStepIndex = state.stepIndex + 1;
   state.mic.completionPending = true;
   ui.instructionText.textContent = "听见了。";
   const recordingReady = stopMic();
@@ -1920,13 +2022,16 @@ async function completeMicPrompt() {
   state.mic.fallbackReady = false;
 
   if (recordingReady) {
-    await recordingReady.catch((error) => {
+    state.mic.recordingStopPromise = recordingReady;
+    recordingReady.catch((error) => {
       console.warn("Mic recording finalization failed:", error);
     });
   }
 
   state.mic.completionPending = false;
-  enterStep(state.stepIndex + 1);
+  if (state.stepToken === stepToken && state.gameStatus === "micPrompt") {
+    enterStep(nextStepIndex);
+  }
 }
 
 function markMicFailure(message) {
@@ -1963,6 +2068,7 @@ function stopMic() {
   state.mic.analyser = null;
   state.mic.data = null;
   state.mic.loudSince = 0;
+  state.mic.lastVoiceAt = 0;
   state.mic.voiceMs = 0;
   state.mic.lastSampleAt = 0;
   state.mic.level = 0;
@@ -2067,13 +2173,39 @@ function isAppleMobileDevice() {
 }
 
 function playMicRecording(step) {
-  if (!state.mic.recordedUrl) {
-    ui.storyText.textContent = step.fallbackText || step.text || "";
-    ui.instructionText.textContent = "轻触继续";
-    playSyntheticTapeEcho();
-    return makePlayback(0.8);
+  if (!state.mic.recordedUrl && state.mic.recordingStopPromise) {
+    ui.instructionText.textContent = "正在接住你的回应...";
+    const done = Promise.race([
+      state.mic.recordingStopPromise,
+      new Promise((resolve) => window.setTimeout(resolve, GAME_CONFIG.mic.recordingFinalizeWaitMs)),
+    ])
+      .catch((error) => {
+        console.warn("Mic recording finalization failed:", error);
+      })
+      .then(() => {
+        if (state.mic.recordedUrl) {
+          return playRecordedMicAudio(step).done;
+        }
+        return playMicRecordingFallback(step).done;
+      });
+    return makePlayback(0, done);
   }
 
+  if (!state.mic.recordedUrl) {
+    return playMicRecordingFallback(step);
+  }
+
+  return playRecordedMicAudio(step);
+}
+
+function playMicRecordingFallback(step) {
+  ui.storyText.textContent = step.fallbackText || step.text || "";
+  ui.instructionText.textContent = "轻触继续";
+  playSyntheticTapeEcho();
+  return makePlayback(0.8);
+}
+
+function playRecordedMicAudio(step) {
   const audio = new Audio(state.mic.recordedUrl);
   audio.preload = "auto";
   audio.volume = 0.86;

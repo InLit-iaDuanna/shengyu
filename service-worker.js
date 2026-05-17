@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "shengyu-v14";
+const CACHE_NAME = "shengyu-v19";
 const ASSETS = [
   "./",
   "./index.html",
@@ -44,8 +44,13 @@ self.addEventListener("fetch", (event) => {
 
   const isAudio = url.pathname.startsWith("/assets/audio/");
 
+  if (isAudio) {
+    event.respondWith(handleAudioRequest(event.request));
+    return;
+  }
+
   event.respondWith(
-    (isAudio ? caches.match(event.request).then((cached) => cached || fetch(event.request)) : fetch(event.request))
+    fetch(event.request)
       .then((networkResponse) => {
         const responseClone = networkResponse.clone();
         if (!url.pathname.startsWith("/developer/")) {
@@ -76,3 +81,21 @@ self.addEventListener("fetch", (event) => {
       })
   );
 });
+
+async function handleAudioRequest(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch(request);
+    const contentType = response.headers.get("Content-Type") || "";
+    if (response.ok && contentType.startsWith("audio/")) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cachedResponse = await cache.match(request, { ignoreSearch: true });
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    return Response.error();
+  }
+}
