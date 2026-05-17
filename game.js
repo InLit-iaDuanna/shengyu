@@ -294,7 +294,7 @@ const state = {
   stepToken: 0,
   manualAdvanceReady: true,
   lastCollisionAt: 0,
-  lastCollisionVoiceAt: 0,
+  lastCollisionVoiceAt: -Infinity,
   collisionWallCueIndex: 0,
   lastStepSoundAt: 0,
   lastMoveAt: 0,
@@ -432,7 +432,7 @@ function resetRun() {
   state.touchTurnDirection = 0;
   state.turnPointerId = null;
   state.lastCollisionAt = 0;
-  state.lastCollisionVoiceAt = 0;
+  state.lastCollisionVoiceAt = -Infinity;
   state.collisionWallCueIndex = 0;
   state.keys.clear();
   state.lastStepSoundAt = 0;
@@ -622,7 +622,7 @@ function preloadCriticalAudio() {
     "heartbeat.mp3", "heartbeat-strong.mp3", "dizzy.mp3",
     "rain-ambient.mp3", "bed-rise.mp3", "water-dispenser.mp3", "cup-set-down.mp3",
     "voice-nightmare-again.mp3", "voice-rain.mp3", "voice-need-water.mp3",
-    "grandma-wake-up.mp3",
+    "grandma-wake-up.mp3", "wall-hit-1.mp3", "wall-hit-2.mp3", "voice-hit-wall.mp3",
   ];
   critical.forEach((file) => {
     loadAudioBuffer(AUDIO_BASE + file).catch(() => {});
@@ -1235,7 +1235,6 @@ function getBoundaryCollision(x, y, scene) {
     label: "墙",
     x: clamped.x,
     y: clamped.y,
-    hitCue: nextWallHitCue(),
   };
 }
 
@@ -1312,7 +1311,7 @@ function triggerCollisionFeedback(item, now) {
   }
   state.lastCollisionAt = now;
   triggerHapticImpact();
-  const hitCue = item?.hitCue || nextWallHitCue();
+  const hitCue = item?.id === "wall" ? nextWallHitCue() : (item?.hitCue || "genericHit");
   playCue(hitCue, getItemAudioPoint(item), { volumeBoost: item?.id === "wall" ? 1.12 : 1 });
   maybePlayCollisionVoice(now);
   showAssistMessage("诶，前面好像过不去。", now, 1400);

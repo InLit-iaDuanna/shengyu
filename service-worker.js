@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "shengyu-v13";
+const CACHE_NAME = "shengyu-v14";
 const ASSETS = [
   "./",
   "./index.html",
