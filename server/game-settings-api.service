@@ -7,7 +7,7 @@ Type=simple
 User=www-data
 Group=www-data
 Environment=GAME_SETTINGS_PORT=8787
-Environment=GAME_SETTINGS_PASSWORD=seeinglab
+EnvironmentFile=/etc/game-settings.env
 Environment=GAME_SETTINGS_STATE=/var/lib/game-settings/state.json
 ExecStart=/usr/bin/python3 /opt/game-settings-api/game-settings-api.py
 Restart=always

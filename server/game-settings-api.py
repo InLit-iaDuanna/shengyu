@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 import json
 import os
+import secrets
 import threading
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("GAME_SETTINGS_PORT", "8787"))
-PASSWORD = os.environ.get("GAME_SETTINGS_PASSWORD", "seeinglab")
+PASSWORD = os.environ.get("GAME_SETTINGS_PASSWORD", "")
+if not PASSWORD.strip():
+    raise RuntimeError("GAME_SETTINGS_PASSWORD must be configured before starting the API")
+MAX_BODY_BYTES = 4096
 STATE_PATH = os.environ.get("GAME_SETTINGS_STATE", "/var/lib/game-settings/state.json")
 STATE_LOCK = threading.Lock()
 SPATIAL_MODES = {"boosted", "natural"}
@@ -89,10 +93,12 @@ class Handler(BaseHTTPRequestHandler):
 
         body = self.read_json_body()
         if body is None:
-            self.respond_json({"error": "bad_request"}, 400)
             return
 
-        if body.get("password") != PASSWORD:
+        password = body.get("password")
+        if not isinstance(password, str) or not secrets.compare_digest(
+            password.encode("utf-8"), PASSWORD.encode("utf-8")
+        ):
             self.respond_json({"error": "unauthorized"}, 401)
             return
 
@@ -113,9 +119,18 @@ class Handler(BaseHTTPRequestHandler):
     def read_json_body(self):
         try:
             length = int(self.headers.get("content-length", "0"))
+            if length < 0:
+                raise ValueError("negative content length")
+            if length > MAX_BODY_BYTES:
+                self.respond_json({"error": "payload_too_large"}, 413)
+                return None
             raw_body = self.rfile.read(length).decode("utf-8")
-            return json.loads(raw_body or "{}")
-        except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
+            body = json.loads(raw_body or "{}")
+            if not isinstance(body, dict):
+                raise ValueError("request body must be an object")
+            return body
+        except (ValueError, UnicodeDecodeError):
+            self.respond_json({"error": "bad_request"}, 400)
             return None
 
     def respond_json(self, payload, status=200):
@@ -129,7 +144,6 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def send_common_headers(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept")
 
