@@ -33,11 +33,15 @@ http://localhost:8001
 https://game.chugao.art/developer
 ```
 
-密码：
+后台口令必须通过服务器的 `GAME_SETTINGS_PASSWORD` 环境变量配置，未配置时 API 会拒绝启动。仓库不提供默认口令。
 
-```text
-seeinglab
-```
+部署 systemd 服务前：
+
+1. 使用 `python3 -c 'import secrets; print(secrets.token_urlsafe(32))'` 生成新口令。
+2. 创建 `/etc/game-settings.env`，写入 `GAME_SETTINGS_PASSWORD=新生成的口令`，将所有者设为 `root:root`、权限设为 `600`。
+3. 安装更新后的服务文件，执行 `sudo systemctl daemon-reload` 和 `sudo systemctl restart game-settings-api`。
+
+旧版本仓库中公开过口令，已有部署必须更换口令；仅删除源码中的值不会撤销旧口令。不要把环境文件提交到仓库。
 
 后台通过同域接口控制玩家端空间音频模式：
 
@@ -49,7 +53,7 @@ seeinglab
 
 ```json
 {
-  "password": "seeinglab",
+  "password": "<服务器配置的新口令>",
   "spatialMode": "boosted"
 }
 ```
@@ -63,6 +67,10 @@ seeinglab
   "version": 1
 }
 ```
+
+接口仅供同域前端调用，不开放跨域 CORS。请求体必须是 JSON 对象，最大 4 KiB。
+
+运行 API 安全回归测试：`python3 -m unittest discover -s server/tests -v`。
 
 Service Worker 会跳过 `/api/`，不会缓存后台设置。
 
